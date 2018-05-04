@@ -3,7 +3,7 @@
 ## Setup
 - `cp .env.example .env`
 - Add database info to the [.env](./.env) file
-- `composer update`
+- `composer install`
 - `php artisan key:generate`
 - `php artisan migrate`
 - `php artisan serve`
