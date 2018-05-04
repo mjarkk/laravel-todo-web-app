@@ -7,7 +7,16 @@
 		<h3 class="subTitle" v-if="list.reduce((acc, el) => el.dune ? acc : acc + 1, 0) > 0">Todo's</h3>
 		<div class="item" v-bind:key="item.id" v-for="(item, i) of list" v-if="!item.dune">
 			<button class="check" v-on:click="changeItemState(i)"><uncheckedIcon/></button>
-			<div class="text" v-on:click="changeItemState(i)">{{ item.title }}</div>
+			<div class="text" v-on:click="editItem(i)">
+				<span v-if="!item.edit">{{ item.title }}</span>
+				<input 
+					autofocus 
+					v-bind:ref="'input-' + i" 
+					v-on:keyup.enter="editItem(i, false)" 
+					v-on:blur="editItem(i, false)"
+					v-else v-model="item.title" 
+					type="text">
+			</div>
 		</div>
 		<h3 class="subTitle" v-if="list.reduce((acc, el) => el.dune ? acc + 1 : acc, 0) > 0">
 			<span>Klaar</span>
@@ -15,7 +24,16 @@
 		</h3>
 		<div class="item itemDune" v-bind:key="item.id" v-for="(item, i) of list" v-if="item.dune">
 			<button class="check" v-on:click="changeItemState(i)"><checkedIcon/></button>
-			<div class="text" v-on:click="changeItemState(i)">{{ item.title }}</div>
+			<div class="text" v-on:click="editItem(i)">
+				<span v-if="!item.edit">{{ item.title }}</span>
+				<input 
+					autofocus 
+					v-bind:ref="'input-' + i" 
+					v-on:keyup.enter="editItem(i, false)" 
+					v-on:blur="editItem(i, false)"
+					v-else v-model="item.title" 
+					type="text">
+			</div>
 			<button class="delete" v-on:click="removeItem(item.id)"><deleteIcon/></button>
 		</div>
 	</div>
@@ -54,14 +72,35 @@
 						if (jsonData.data && typeof jsonData.data.id == 'number') {
 							let toAdd = jsonData.data
 							toAdd['dune'] = false
+							toAdd['edit'] = false
 							this.list.unshift(toAdd)
 						}
 					})
 					this.newItem = ''
 				}
 			},
+			editItem(id, status) {
+				let item = this.list[id]
+				let toSet = !item.edit
+				if (typeof status == 'boolean') {
+					toSet = status
+				}
+				item.edit = toSet
+				if (!toSet && item && (!item.lastTitle || item.lastTitle != item.title)) {
+					item.lastTitle = item.title
+					if (item.title == '') {
+						functions.fetch('/api/remove/' + item.id)
+					} else {
+						functions.fetch('/api/changetitle/' + item.id, {title: item.title})
+					}
+				} else if (toSet) {
+					this.list[id]['lastTitle'] = this.list[id].title
+					this.$nextTick(() => 
+						this.$refs['input-' + id][0].focus()
+					)
+				}
+			},
 			changeItemState(id) {
-				console.log(id)
 				let toSet = !this.list[id].dune
 				this.list[id].dune = toSet
 				functions.fetch('/api/changestate/' + this.list[id].id, {dune: toSet})
@@ -84,6 +123,10 @@
 			axios.get('/api/list')
 			.then(res => {
 				vm.loading = false
+				vm.list = res.data.map(el => {
+					el['edit'] = false
+					return el
+				})
 				vm.list = res.data
 			})
 			.catch(err => 

@@ -41,4 +41,11 @@ class TodoController extends Controller
         Todo::where('id', '=', $id)->update(['dune' => request('dune') ? 1 : 0]);
         return ['status' => request('dune')];
     }
+    public function changeTitle($id)
+    {
+        $this->validate(request(), [
+            'title' => 'required|min:1'
+        ]);
+        Todo::where('id', '=', $id)->update(['title' => request('title')]);
+    }
 }
