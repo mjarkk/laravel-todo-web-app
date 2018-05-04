@@ -81,23 +81,25 @@
 			},
 			editItem(id, status) {
 				let item = this.list[id]
-				let toSet = !item.edit
-				if (typeof status == 'boolean') {
-					toSet = status
-				}
-				item.edit = toSet
-				if (!toSet && item && (!item.lastTitle || item.lastTitle != item.title)) {
-					item.lastTitle = item.title
-					if (item.title == '') {
-						functions.fetch('/api/remove/' + item.id)
-					} else {
-						functions.fetch('/api/changetitle/' + item.id, {title: item.title})
+				if (item) {
+					let toSet = !item.edit
+					if (typeof status == 'boolean') {
+						toSet = status
 					}
-				} else if (toSet) {
-					this.list[id]['lastTitle'] = this.list[id].title
-					this.$nextTick(() => 
-						this.$refs['input-' + id][0].focus()
-					)
+					item.edit = toSet
+					if (!toSet && item && (!item.lastTitle || item.lastTitle != item.title)) {
+						item.lastTitle = item.title
+						if (item.title == '') {
+							this.removeItem(item.id)
+						} else {
+							functions.fetch('/api/changetitle/' + item.id, {title: item.title})
+						}
+					} else if (toSet) {
+						this.list[id]['lastTitle'] = this.list[id].title
+						this.$nextTick(() => 
+							this.$refs['input-' + id][0].focus()
+						)
+					}
 				}
 			},
 			changeItemState(id) {
